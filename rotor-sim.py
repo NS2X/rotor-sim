@@ -21,7 +21,7 @@ args = argparser.parse_args()
 ver = 1.0
 maxClients = 1
 termx = 80
-termy = 20
+termy = 14
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 az = 0.0
@@ -33,6 +33,11 @@ tel = 0.0
 def init():
     # Initialise Colorama module
     colorinit()
+
+    # Tweak args
+    args.pr = args.pr.upper()
+    if args.pr == "EASYCOMM":
+        args.pr = "EASYCOMM II"
 
     # Build UI elements
     build_interface()
@@ -137,7 +142,7 @@ def parse_easycomm(data, client_socket):
 
 # Send position feedback data
 def feedback(client_socket):
-    if args.pr == "Easycomm":
+    if args.pr == "EASYCOMM II":
         send("AZ{}\n".format(az), client_socket)
         send("EL{}\n".format(az), client_socket)
         print_at("Target Azimuth: {}".format(taz), 3, 4)
@@ -181,11 +186,31 @@ def build_interface():
         print_at("│", int(termx / 2), i+4)
     print_at("┴", int(termx / 2), termy)
 
+    dataColPos = int(termx / 2) - 1
+
     # Initial readouts
-    print_at("AZIMUTH:", 3, 4)
-    print_at("ELEVATION:", 3, 5)
-    print_at("TARGET AZIMUTH:", 3, 6)
-    print_at("TARGET ELEVATION:", 3, 7)
+    print_at("Azimuth:", 3, 4)
+    print_at("Elevation:", 3, 5)
+    print_at("Target Azimuth:", 3, 6)
+    print_at("Target Elevation:", 3, 7)
+
+    print_at("Socket listen port:", 3, 9)
+    print_at(args.p, dataColPos-len(args.p), 9)
+
+    print_at("Rotor protocol:", 3, 10)
+    print_at(args.pr, dataColPos - len(args.pr), 10)
+
+    print_at("Feedback interval:", 3, 11)
+    text = args.fi + " ms"
+    print_at(text, dataColPos - len(text), 11)
+
+    print_at("Azimuth rate:", 3, 12)
+    text = args.ar + "°/s"
+    print_at(text, dataColPos - len(text), 12)
+
+    print_at("Elevation rate:", 3, 13)
+    text = args.er + "°/s"
+    print_at(text, dataColPos - len(text), 13)
 
 
 # Send data to client
