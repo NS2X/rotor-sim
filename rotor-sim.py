@@ -12,10 +12,10 @@ import socket
 import threading
 
 argparser = argparse.ArgumentParser(description="Antenna rotor simulator for testing rotor driver software")
-argparser.add_argument("-p", action="store", help="Socket listen port, default 4000", default=4000)
+argparser.add_argument("-p", action="store", help="Socket listen port, default 4000", default="4000")
 argparser.add_argument("-pr", action="store", help="Rotor protocol (EASYCOMM/GS-232/SPID), default EASYCOMM", default="EASYCOMM")
-argparser.add_argument("-ar", action="store", help="Azimuth rate (deg/second), default 5", default=5)
-argparser.add_argument("-er", action="store", help="Elevation rate (deg/second), default 5", default=5)
+argparser.add_argument("-ar", action="store", help="Azimuth rate (deg/second), default 5", default="5")
+argparser.add_argument("-er", action="store", help="Elevation rate (deg/second), default 5", default="5")
 argparser.add_argument("-fi", action="store", help="rotor position feedback interval (milliseconds), default 250", default=250)
 args = argparser.parse_args()
 
@@ -263,7 +263,7 @@ def log(message):
             print_at(" ", j + 42, i + 4)
 
     for i in range(logLen):
-        print_at(logMsgs[logLen - i - 1], 42, termy-1-i)
+        print_at(Style.BRIGHT + logMsgs[logLen - i - 1] + Style.RESET_ALL, 42, termy-1-i)
 
 
 # Send data to client
