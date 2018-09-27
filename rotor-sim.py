@@ -7,6 +7,7 @@ Antenna rotor simulator for testing rotor driver software
 
 import argparse
 from colorama import init as colorinit
+from colorama import Fore, Back, Style
 import socket
 import threading
 
@@ -21,8 +22,10 @@ args = argparser.parse_args()
 ver = 1.0
 maxClients = 1
 termx = 80
-termy = 14
+termy = 16
+dataColPos = int(termx / 2) - 1
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+logMsgs = []
 
 az = 0.0
 el = 0.0
@@ -41,8 +44,7 @@ def init():
 
     # Build UI elements
     build_interface()
-    print_at("", termx, termy)
-    return
+    print_at("", termx, termy+1)
 
     # Initialise feedback thread variable
     fbThread = None
@@ -50,12 +52,14 @@ def init():
     # Configure TCP socket
     server.bind(('0.0.0.0', int(args.p)))
     server.listen(maxClients)
-    print("Listening on port {}\n".format(args.p))
+    text = "LISTENING"
+    print_at(text, dataColPos - len(text), 10)
 
     # Accept connections forever
     while True:
         client_socket, address = server.accept()
-        print("Connection from {}\n".format(address[0]))
+        text = address[0]
+        print_at(text, dataColPos - len(text), 10)
 
         # Handle each client socket connection
         try:
@@ -67,14 +71,15 @@ def init():
                     fbThread = threading.Thread(target=set_interval, args=(feedback, client_socket, int(args.fi) / 1000))
                     fbThread.start()
         except ConnectionResetError as e:
-            print("Connection to {} closed\n".format(address[0]))
+            text = "           LISTENING"
+            print_at(text, dataColPos - len(text), 10)
 
 
 # Handle client socket connection
 def handle(client_socket):
     data = client_socket.recv(1024).decode("utf-8")
 
-    if args.pr == "EASYCOMM":
+    if args.pr == "EASYCOMM II":
         parse_easycomm(data, client_socket)
 
 
@@ -90,54 +95,58 @@ def parse_easycomm(data, client_socket):
 
     # Switch command type
     if cmd == "AZ":
-        print("[DRIVER] Move rotor azimuth to {}°\n".format(arg))
+        log("[DRIVER] Move rotor azimuth to {}°\n".format(arg))
         taz = float(arg)
+        text = "    " + str(taz) + "°"
+        print_at(text, dataColPos - len(text), 6)
     elif cmd == "EL":
-        print("[DRIVER] Move rotor elevation to {}°\n".format(arg))
+        log("[DRIVER] Move rotor elevation to {}°\n".format(arg))
         tel = float(arg)
+        text = "    " + str(tel) + "°"
+        print_at(text, dataColPos - len(text), 7)
     elif cmd == "UP":
-        print("[DRIVER] Uplink is {} MHz\n".format(int(arg)/1000000))
+        log("[DRIVER] Uplink is {} MHz\n".format(int(arg)/1000000))
     elif cmd == "DN":
-        print("[DRIVER] Downlink is {} MHz\n".format(int(arg)/1000000))
+        log("[DRIVER] Downlink is {} MHz\n".format(int(arg)/1000000))
     elif cmd == "UM":
-        print("[DRIVER] Uplink mode is {}\n".format(arg))
+        log("[DRIVER] Uplink mode is {}\n".format(arg))
     elif cmd == "DM":
-        print("[DRIVER] Downlink mode is {}\n".format(arg))
+        log("[DRIVER] Downlink mode is {}\n".format(arg))
     elif cmd == "UR":
-        print("[DRIVER] Use uplink radio #{}\n".format(arg))
+        log("[DRIVER] Use uplink radio #{}\n".format(arg))
     elif cmd == "DR":
-        print("[DRIVER] Use downlink radio #{}\n".format(arg))
+        log("[DRIVER] Use downlink radio #{}\n".format(arg))
     elif cmd == "ML":
-        print("[DRIVER] Move rotor left\n")
+        log("[DRIVER] Move rotor left\n")
     elif cmd == "MR":
-        print("[DRIVER] Move rotor right\n")
+        log("[DRIVER] Move rotor right\n")
     elif cmd == "MU":
-        print("[DRIVER] Move rotor up\n")
+        log("[DRIVER] Move rotor up\n")
     elif cmd == "MD":
-        print("[DRIVER] Move rotor down\n")
+        log("[DRIVER] Move rotor down\n")
     elif cmd == "SA":
-        print("[DRIVER] Stop moving azimuth\n")
+        log("[DRIVER] Stop moving azimuth\n")
     elif cmd == "SE":
-        print("[DRIVER] Stop moving elevation\n")
+        log("[DRIVER] Stop moving elevation\n")
     elif cmd == "AO":
-        print("[DRIVER] Target AOS notification\n")
+        log("[DRIVER] Target AOS notification\n")
     elif cmd == "LO":
-        print("[DRIVER] Target LOS notification\n")
+        log("[DRIVER] Target LOS notification\n")
     elif cmd == "OP":
-        print("[DRIVER] Set output {}\n".format(arg))
+        log("[DRIVER] Set output {}\n".format(arg))
     elif cmd == "IP":
-        print("[DRIVER] Read input {}\n".format(arg))
+        log("[DRIVER] Read input {}\n".format(arg))
     elif cmd == "AN":
-        print("[DRIVER] Read analog input {}\n".format(arg))
+        log("[DRIVER] Read analog input {}\n".format(arg))
     elif cmd == "ST":
-        print("[DRIVER] Set time to {}\n".format(arg))
+        log("[DRIVER] Set time to {}\n".format(arg))
     elif cmd == "VE":
-        print("[DRIVER] Version request".format(arg))
+        log("[DRIVER] Version request".format(arg))
 
         send("VE{}\n".format(ver), client_socket)
-        print("[ROTSIM] Version is {}\n".format(ver))
+        log("[ROTSIM] Version is {}\n".format(ver))
     else:
-        print("[DRIVER] UNRECOGNISED COMMAND: {} {}\n".format(cmd, arg))
+        log("[DRIVER] UNRECOGNISED COMMAND: {} {}\n".format(cmd, arg))
 
 
 # Send position feedback data
@@ -145,29 +154,34 @@ def feedback(client_socket):
     if args.pr == "EASYCOMM II":
         send("AZ{}\n".format(az), client_socket)
         send("EL{}\n".format(az), client_socket)
-        print_at("Target Azimuth: {}".format(taz), 3, 4)
-        print("[ROTSIM] AZ: {} ({})   EL: {} ({})".format(az, taz, el, tel))
+
+        text = "    " + str(az) + "°"
+        print_at(text, dataColPos - len(text), 4)
+
+        text = "    " + str(el) + "°"
+        print_at(text, dataColPos - len(text), 5)
 
 
+# Build user interface
 def build_interface():
     # Top border
-    print("┌", end="")
+    print_at("┌", 1, 1)
     for i in range(termx-2):
-        print("─", end="")
-    print("┐")
+        print_at("─", i + 2, 1)
+    print_at("┐", termx, 1)
 
     # Side borders
     for i in range(termy-1):
-        print("│", end="")
+        print_at("│", 1, i + 2)
         for j in range(termx - 2):
             print(" ", end="")
-        print("│")
+        print_at("│", termx, i + 2)
 
     # Bottom border
     print_at("└", 1, termy)
     for i in range(termx - 2):
-        print("─", end="")
-    print("┘", end="")
+        print_at("─", i + 2, termy)
+    print_at("┘", termx, termy)
 
     # Header border
     print_at("├", 1, 3)
@@ -186,31 +200,64 @@ def build_interface():
         print_at("│", int(termx / 2), i+4)
     print_at("┴", int(termx / 2), termy)
 
-    dataColPos = int(termx / 2) - 1
-
     # Initial readouts
-    print_at("Azimuth:", 3, 4)
-    print_at("Elevation:", 3, 5)
-    print_at("Target Azimuth:", 3, 6)
-    print_at("Target Elevation:", 3, 7)
+    print_at(Fore.LIGHTGREEN_EX + "Azimuth:" + Style.RESET_ALL, 3, 4)
+    text = str(az) + "°"
+    print_at(text, dataColPos - len(text), 4)
 
-    print_at("Socket listen port:", 3, 9)
-    print_at(args.p, dataColPos-len(args.p), 9)
+    print_at(Fore.LIGHTGREEN_EX + "Elevation:" + Style.RESET_ALL, 3, 5)
+    text = str(el) + "°"
+    print_at(text, dataColPos - len(text), 5)
 
-    print_at("Rotor protocol:", 3, 10)
-    print_at(args.pr, dataColPos - len(args.pr), 10)
+    print_at(Fore.LIGHTGREEN_EX + "Target Azimuth:" + Style.RESET_ALL, 3, 6)
+    text = "---°"
+    print_at(text, dataColPos - len(text), 6)
 
-    print_at("Feedback interval:", 3, 11)
+    print_at(Fore.LIGHTGREEN_EX + "Target Elevation:" + Style.RESET_ALL, 3, 7)
+    text = "---°"
+    print_at(text, dataColPos - len(text), 7)
+
+    print_at(Fore.LIGHTGREEN_EX + "Socket status:" + Style.RESET_ALL, 3, 10)
+    text = "NO CLIENT"
+    print_at(text, dataColPos - len(text), 10)
+
+    print_at(Fore.LIGHTGREEN_EX + "Socket listen port:" + Style.RESET_ALL, 3, 11)
+    print_at(args.p, dataColPos-len(args.p), 11)
+
+    print_at(Fore.LIGHTGREEN_EX + "Rotor protocol:" + Style.RESET_ALL, 3, 12)
+    print_at(args.pr, dataColPos - len(args.pr), 12)
+
+    print_at(Fore.LIGHTGREEN_EX + "Feedback interval:" + Style.RESET_ALL, 3, 13)
     text = args.fi + " ms"
-    print_at(text, dataColPos - len(text), 11)
-
-    print_at("Azimuth rate:", 3, 12)
-    text = args.ar + "°/s"
-    print_at(text, dataColPos - len(text), 12)
-
-    print_at("Elevation rate:", 3, 13)
-    text = args.er + "°/s"
     print_at(text, dataColPos - len(text), 13)
+
+    print_at(Fore.LIGHTGREEN_EX + "Azimuth rate:" + Style.RESET_ALL, 3, 14)
+    text = args.ar + "°/s"
+    print_at(text, dataColPos - len(text), 14)
+
+    print_at(Fore.LIGHTGREEN_EX + "Elevation rate:" + Style.RESET_ALL, 3, 15)
+    text = args.er + "°/s"
+    print_at(text, dataColPos - len(text), 15)
+
+
+# Add message to log list
+def log(message):
+    logMsgs.append(message)
+    logLen = len(logMsgs)
+    maxLogLen = termy-4
+
+    # Remove oldest log message if too long
+    if len(logMsgs) > maxLogLen:
+        del logMsgs[0]
+        logLen -= 1
+
+    # Clear log area
+    for i in range(maxLogLen):
+        for j in range(termx - 42):
+            print_at(" ", j + 42, i + 4)
+
+    for i in range(logLen):
+        print_at(logMsgs[logLen - i - 1], 42, termy-1-i)
 
 
 # Send data to client
@@ -228,6 +275,9 @@ def set_interval(func, arg, time):
 # Print string at coordinate
 def print_at(s, x, y):
     print("\033[" + str(y) + ";" + str(x) + "H" + s, end="")
+
+    # Reset cursor
+    print("\033[" + str(termy+1) + ";" + str(1) + "H", end="")
 
 
 init()
