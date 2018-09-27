@@ -56,23 +56,27 @@ def init():
     print_at(text, dataColPos - len(text), 10)
 
     # Accept connections forever
-    while True:
-        client_socket, address = server.accept()
-        text = address[0]
-        print_at(text, dataColPos - len(text), 10)
-
-        # Handle each client socket connection
-        try:
-            while True:
-                handle(client_socket)
-
-                # Start feedback thread
-                if fbThread is None:
-                    fbThread = threading.Thread(target=set_interval, args=(feedback, client_socket, int(args.fi) / 1000))
-                    fbThread.start()
-        except ConnectionResetError as e:
-            text = "           LISTENING"
+    try:
+        while True:
+            client_socket, address = server.accept()
+            text = address[0]
             print_at(text, dataColPos - len(text), 10)
+
+            # Handle each client socket connection
+            try:
+                while True:
+                    handle(client_socket)
+
+                    # Start feedback thread
+                    if fbThread is None:
+                        fbThread = threading.Thread(target=set_interval, args=(feedback, client_socket, int(args.fi) / 1000))
+                        fbThread.start()
+            except ConnectionResetError as e:
+                text = "           LISTENING"
+                print_at(text, dataColPos - len(text), 10)
+    except KeyboardInterrupt:
+        print_at("Exiting", 1, termy + 1)
+        pass
 
 
 # Handle client socket connection
@@ -157,9 +161,11 @@ def feedback(client_socket):
 
         text = "    " + str(az) + "°"
         print_at(text, dataColPos - len(text), 4)
+        # log("[ROTSIM] Azimuth is {}\n".format(az))
 
         text = "    " + str(el) + "°"
         print_at(text, dataColPos - len(text), 5)
+        # log("[ROTSIM] Elevation is {}\n".format(el))
 
 
 # Build user interface
