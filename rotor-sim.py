@@ -49,8 +49,70 @@ def init():
 
 # Handle client socket connection
 def handle(client_socket):
-    data = client_socket.recv(1024)
-    print(data)
+    data = client_socket.recv(1024).decode("utf-8")
+
+    if args.pr == "Easycomm":
+        parseEasycomm(data, client_socket)
+
+
+# EASYCOMM II Protocol parsing
+def parseEasycomm(data, client_socket):
+    # Tokenise (cmd always two characters)
+    data = data.strip()
+    cmd = data[0:2]
+    if len(data) > 2:
+        arg = data[2:]
+    else:
+        arg = ""
+
+    if cmd == "AZ":
+        print("[DRIVER] Move rotor azimuth to {}°".format(arg))
+    elif cmd == "EL":
+        print("[DRIVER] Move rotor elevation to {}°".format(arg))
+    elif cmd == "UP":
+        print("[DRIVER] Uplink is {} MHz".format(int(arg)/1000000))
+    elif cmd == "DN":
+        print("[DRIVER] Downlink is {} MHz".format(int(arg)/1000000))
+    elif cmd == "UM":
+        print("[DRIVER] Uplink mode is {}".format(arg))
+    elif cmd == "DM":
+        print("[DRIVER] Downlink mode is {}".format(arg))
+    elif cmd == "UR":
+        print("[DRIVER] Use uplink radio #{}".format(arg))
+    elif cmd == "DR":
+        print("[DRIVER] Use downlink radio #{}".format(arg))
+    elif cmd == "ML":
+        print("[DRIVER] Move rotor left")
+    elif cmd == "MR":
+        print("[DRIVER] Move rotor right")
+    elif cmd == "MU":
+        print("[DRIVER] Move rotor up")
+    elif cmd == "MD":
+        print("[DRIVER] Move rotor down")
+    elif cmd == "SA":
+        print("[DRIVER] Stop moving azimuth")
+    elif cmd == "SE":
+        print("[DRIVER] Stop moving elevation")
+    elif cmd == "AO":
+        print("[DRIVER] Target AOS notification")
+    elif cmd == "LO":
+        print("[DRIVER] Target LOS notification")
+    elif cmd == "OP":
+        print("[DRIVER] Set output {}".format(arg))
+    elif cmd == "IP":
+        print("[DRIVER] Read input {}".format(arg))
+    elif cmd == "AN":
+        print("[DRIVER] Read analog input {}".format(arg))
+    elif cmd == "ST":
+        print("[DRIVER] Set time to {}".format(arg))
+    elif cmd == "VE":
+        print("[DRIVER] Version request".format(arg))
+    else:
+        print("[DRIVER] UNRECOGNISED COMMAND: {} {}".format(cmd, arg))
+
+
+def send(data, client_socket):
+    client_socket.send(bytes(data, encoding="utf-8"))
 
 
 init()
