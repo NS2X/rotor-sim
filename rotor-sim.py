@@ -16,7 +16,7 @@ argparser.add_argument("-p", action="store", help="Socket listen port, default 4
 argparser.add_argument("-pr", action="store", help="Rotor protocol (EASYCOMM/GS-232/SPID), default EASYCOMM", default="EASYCOMM")
 argparser.add_argument("-ar", action="store", help="Azimuth rate (deg/second), default 5", default="5")
 argparser.add_argument("-er", action="store", help="Elevation rate (deg/second), default 5", default="5")
-argparser.add_argument("-fi", action="store", help="rotor position feedback interval (milliseconds), default 250", default=250)
+argparser.add_argument("-fi", action="store", help="rotor position feedback interval (milliseconds), default 250", default="250")
 args = argparser.parse_args()
 
 ver = 1.0
@@ -155,9 +155,34 @@ def parse_easycomm(data, client_socket):
 
 # Send position feedback data
 def feedback(client_socket):
+    global az
+    global el
+
+    azDiff = az - taz
+    elDiff = el - tel
+    fiSec = int(args.fi) / 1000
+    azRate = float(args.ar) * fiSec
+    elRate = float(args.er) * fiSec
+
+    # Azimuth movement logic
+    if abs(azDiff) < azRate:  # If rotor within rate to target
+        az = taz  # Move to target
+    elif az < taz:
+        az += azRate
+    elif az > taz:
+        az -= azRate
+
+    # Elevation movement logic
+    if abs(elDiff) < elRate:  # If rotor within rate to target
+        el = tel  # Move to target
+    elif el < tel:
+        el += elRate
+    elif el > tel:
+        el -= elRate
+
     if args.pr == "EASYCOMM II":
         send("AZ{}\n".format(az), client_socket)
-        send("EL{}\n".format(az), client_socket)
+        send("EL{}\n".format(el), client_socket)
 
         text = "    " + str(az) + "°"
         print_at(text, dataColPos - len(text), 4)
