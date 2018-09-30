@@ -9,7 +9,8 @@ import argparse
 from colorama import init as colorinit
 from colorama import Fore, Back, Style
 import socket
-import threading
+from threading import Event, Thread
+from queue import Queue
 
 argparser = argparse.ArgumentParser(description="Antenna rotor simulator for testing rotor driver software")
 argparser.add_argument("-p", action="store", help="Socket listen port, default 4000", default="4000")
@@ -26,6 +27,8 @@ termy = 16
 dataColPos = int(termx / 2) - 1
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 logMsgs = []
+tazq = Queue()
+telq = Queue()
 
 az = 0.0
 el = 0.0
@@ -69,7 +72,7 @@ def init():
 
                     # Start feedback thread
                     if fbThread is None:
-                        fbThread = threading.Thread(target=set_interval, args=(feedback, client_socket, int(args.fi) / 1000))
+                        fbThread = Thread(target=set_interval, args=(feedback, client_socket, tazq, telq, int(args.fi) / 1000))
                         fbThread.start()
             except ConnectionResetError as e:
                 text = "           LISTENING"
@@ -100,14 +103,20 @@ def parse_easycomm(data, client_socket):
     # Switch command type
     if cmd == "AZ":
         log("[DRIVER] Move rotor azimuth to {}°\n".format(arg))
+
         taz = float(arg)
-        text = "    " + str(taz) + "°"
-        print_at(text, dataColPos - len(text), 6)
+        tazq.put(taz)
+
+        text = "    " + str(taz) + "° "
+        print_at(text, dataColPos - len(text) + 1, 6)
     elif cmd == "EL":
         log("[DRIVER] Move rotor elevation to {}°\n".format(arg))
+
         tel = float(arg)
-        text = "    " + str(tel) + "°"
-        print_at(text, dataColPos - len(text), 7)
+        telq.put(tel)
+
+        text = "    " + str(tel) + "° "
+        print_at(text, dataColPos - len(text) + 1, 7)
     elif cmd == "UP":
         log("[DRIVER] Uplink is {} MHz\n".format(int(arg)/1000000))
     elif cmd == "DN":
@@ -150,13 +159,22 @@ def parse_easycomm(data, client_socket):
         send("VE{}\n".format(ver), client_socket)
         log("[ROTSIM] Version is {}\n".format(ver))
     else:
-        log("[DRIVER] UNRECOGNISED COMMAND: {} {}\n".format(cmd, arg))
+        log("[DRIVER] BAD COMMAND: {} {}\n".format(cmd, arg))
 
 
 # Send position feedback data
-def feedback(client_socket):
+def feedback(client_socket, tazq, telq):
     global az
     global el
+    global taz
+    global tel
+
+    # Send target position cross-thread
+    if not tazq.empty():
+        taz = tazq.get()
+
+    if not telq.empty():
+        tel = telq.get()
 
     azDiff = az - taz
     elDiff = el - tel
@@ -184,12 +202,12 @@ def feedback(client_socket):
         send("AZ{}\n".format(az), client_socket)
         send("EL{}\n".format(el), client_socket)
 
-        text = "    " + str(az) + "°"
-        print_at(text, dataColPos - len(text), 4)
+        text = "    " + str(az) + "° "
+        print_at(text, dataColPos - len(text) + 1, 4)
         # log("[ROTSIM] Azimuth is {}\n".format(az))
 
-        text = "    " + str(el) + "°"
-        print_at(text, dataColPos - len(text), 5)
+        text = "    " + str(el) + "° "
+        print_at(text, dataColPos - len(text) + 1, 5)
         # log("[ROTSIM] Elevation is {}\n".format(el))
 
 
@@ -297,10 +315,10 @@ def send(data, client_socket):
 
 
 # Call function at regular interval
-def set_interval(func, arg, time):
-    e = threading.Event()
+def set_interval(func, arg1, arg2, arg3, time):
+    e = Event()
     while not e.wait(time):
-        func(arg)
+        func(arg1, arg2, arg3)
 
 
 # Print string at coordinate
