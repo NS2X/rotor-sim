@@ -106,19 +106,23 @@ def parse_easycomm(data, client_socket):
     if cmd == "AZ":
         log("[DRIVER] Move azimuth to {}°\n".format(arg))
 
-        taz = float(arg)
-        tazq.put(taz)
-
-        text = "    " + str(taz) + "° "
-        print_at(text, dataColPos - len(text) + 1, 6)
+        try:
+            taz = float(arg)
+            tazq.put(taz)
+            text = "    " + str(taz) + "° "
+            print_at(text, dataColPos - len(text) + 1, 5)
+        except ValueError:
+            pass
     elif cmd == "EL":
         log("[DRIVER] Move elevation to {}°\n".format(arg))
 
-        tel = float(arg)
-        telq.put(tel)
-
-        text = "    " + str(tel) + "° "
-        print_at(text, dataColPos - len(text) + 1, 7)
+        try:
+            tel = float(arg)
+            telq.put(tel)
+            text = "    " + str(tel) + "° "
+            print_at(text, dataColPos - len(text) + 1, 7)
+        except ValueError:
+            pass
     elif cmd == "UP":
         log("[DRIVER] Uplink is {} MHz\n".format(int(arg)/1000000))
     elif cmd == "DN":
@@ -213,7 +217,7 @@ def feedback(client_socket, tazq, telq):
         # log("[ROTSIM] Azimuth is {}\n".format(az))
 
         text = "    " + str(el) + "° "
-        print_at(text, dataColPos - len(text) + 1, 5)
+        print_at(text, dataColPos - len(text) + 1, 6)
         # log("[ROTSIM] Elevation is {}\n".format(el))
 
 
@@ -268,12 +272,12 @@ def build_interface():
     text = str(az) + "°"
     print_at(text, dataColPos - len(text), 4)
 
-    print_at(Fore.LIGHTGREEN_EX + "Elevation:" + Style.RESET_ALL, 3, 5)
-    text = str(el) + "°"
+    print_at(Fore.LIGHTGREEN_EX + "Target Azimuth:" + Style.RESET_ALL, 3, 5)
+    text = "---°"
     print_at(text, dataColPos - len(text), 5)
 
-    print_at(Fore.LIGHTGREEN_EX + "Target Azimuth:" + Style.RESET_ALL, 3, 6)
-    text = "---°"
+    print_at(Fore.LIGHTGREEN_EX + "Elevation:" + Style.RESET_ALL, 3, 6)
+    text = str(el) + "°"
     print_at(text, dataColPos - len(text), 6)
 
     print_at(Fore.LIGHTGREEN_EX + "Target Elevation:" + Style.RESET_ALL, 3, 7)
