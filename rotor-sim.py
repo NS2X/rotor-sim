@@ -331,7 +331,10 @@ def log(message):
 
 # Send data to client
 def send(data, client_socket):
-    client_socket.send(bytes(data, encoding="utf-8"))
+    try:
+        client_socket.send(bytes(data, encoding="utf-8"))
+    except ConnectionResetError:
+        pass
 
 
 # Call function at regular interval
@@ -343,7 +346,8 @@ def set_interval(func, arg1, arg2, arg3, time):
 
 # Print string at coordinate
 def print_at(s, x, y):
-    print("\033[" + str(y) + ";" + str(x) + "H" + s, end="")
+    print("\033[" + str(y) + ";" + str(x) + "H", end="")
+    print(s, end="")
 
     # Reset cursor
     #print("\033[" + str(termy+1) + ";" + str(1) + "H", end="")
