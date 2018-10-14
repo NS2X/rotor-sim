@@ -8,6 +8,7 @@ Antenna rotor simulator for testing rotor driver software
 import argparse
 from colorama import init as colorinit
 from colorama import Fore, Back, Style
+import cursor
 import socket
 from threading import Event, Thread
 from queue import Queue
@@ -220,6 +221,12 @@ def feedback(client_socket, tazq, telq):
 def build_interface():
     global logClearStr
 
+    # Clear console
+    print("\033[H\033[J")
+
+    # Hide cursor
+    cursor.hide()
+
     # Top border
     print_at("┌", 1, 1)
     for i in range(termx-2):
@@ -335,7 +342,7 @@ def print_at(s, x, y):
     print("\033[" + str(y) + ";" + str(x) + "H" + s, end="")
 
     # Reset cursor
-    print("\033[" + str(termy+1) + ";" + str(1) + "H", end="")
+    #print("\033[" + str(termy+1) + ";" + str(1) + "H", end="")
 
 
 init()

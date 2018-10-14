@@ -1,4 +1,5 @@
 @echo off
-cls
+title Rotor Simulator
+
 python rotor-sim.py -ar 15
 pause
