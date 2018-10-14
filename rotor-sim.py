@@ -177,6 +177,10 @@ def feedback(client_socket, tazq, telq):
     if not telq.empty():
         tel = telq.get()
 
+    # No negative elevation
+    if tel < 0:
+        tel = 0.0
+
     azDiff = az - taz
     elDiff = el - tel
     fiSec = int(args.fi) / 1000
