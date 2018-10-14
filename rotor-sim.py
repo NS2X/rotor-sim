@@ -29,6 +29,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 logMsgs = []
 tazq = Queue()
 telq = Queue()
+logClearStr = ""
 
 az = 0.0
 el = 0.0
@@ -213,6 +214,8 @@ def feedback(client_socket, tazq, telq):
 
 # Build user interface
 def build_interface():
+    global logClearStr
+
     # Top border
     print_at("┌", 1, 1)
     for i in range(termx-2):
@@ -288,26 +291,26 @@ def build_interface():
     text = args.er + "°/s"
     print_at(text, dataColPos - len(text), 15)
 
+    # Create clearing string
+    for j in range(termx - 42):
+        logClearStr += " "
+
 
 # Add message to log list
 def log(message):
+    global logClearStr
     logMsgs.append(message)
     logLen = len(logMsgs)
     maxLogLen = termy-4
-    clearStr = ""
 
     # Remove oldest log message if too long
     if len(logMsgs) > maxLogLen:
         del logMsgs[0]
         logLen -= 1
 
-    # Create clearing string
-    for j in range(termx - 42):
-        clearStr += " "
-
     # Clear line and write new message
     for i in range(logLen):
-        print_at(clearStr, 42, termy-1-i)
+        print_at(logClearStr, 42, termy-1-i)
         print_at(Style.BRIGHT + logMsgs[logLen - i - 1] + Style.RESET_ALL, 42, termy-1-i)
 
 
