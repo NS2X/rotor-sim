@@ -102,7 +102,7 @@ def parse_easycomm(data, client_socket):
 
     # Switch command type
     if cmd == "AZ":
-        log("[DRIVER] Move rotor azimuth to {}°\n".format(arg))
+        log("[DRIVER] Move azimuth to {}°\n".format(arg))
 
         taz = float(arg)
         tazq.put(taz)
@@ -110,7 +110,7 @@ def parse_easycomm(data, client_socket):
         text = "    " + str(taz) + "° "
         print_at(text, dataColPos - len(text) + 1, 6)
     elif cmd == "EL":
-        log("[DRIVER] Move rotor elevation to {}°\n".format(arg))
+        log("[DRIVER] Move elevation to {}°\n".format(arg))
 
         tel = float(arg)
         telq.put(tel)
@@ -294,18 +294,20 @@ def log(message):
     logMsgs.append(message)
     logLen = len(logMsgs)
     maxLogLen = termy-4
+    clearStr = ""
 
     # Remove oldest log message if too long
     if len(logMsgs) > maxLogLen:
         del logMsgs[0]
         logLen -= 1
 
-    # Clear log area
-    for i in range(maxLogLen):
-        for j in range(termx - 42):
-            print_at(" ", j + 42, i + 4)
+    # Create clearing string
+    for j in range(termx - 42):
+        clearStr += " "
 
+    # Clear line and write new message
     for i in range(logLen):
+        print_at(clearStr, 42, termy-1-i)
         print_at(Style.BRIGHT + logMsgs[logLen - i - 1] + Style.RESET_ALL, 42, termy-1-i)
 
 
