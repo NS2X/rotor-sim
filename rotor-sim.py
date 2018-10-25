@@ -195,10 +195,23 @@ def feedback(client_socket, tazq, telq):
     # Azimuth movement logic
     if abs(azDiff) < azRate:  # If rotor within rate to target
         az = taz  # Move to target
-    elif az < taz:
-        az += azRate
-    elif az > taz:
-        az -= azRate
+    else:
+        # Determine if CW or CCW is shortest path to target
+        if az < taz:
+            if abs(az - taz) < 180:
+                az += azRate
+            else:
+                az -= azRate
+        else:
+            if abs(az - taz) < 180:
+                az -= azRate
+            else:
+                az += azRate
+
+    # Shift azimuth by 360 if below 0
+    az = az % 360
+    if az < 0:
+        az += 360
 
     # Elevation movement logic
     if abs(elDiff) < elRate:  # If rotor within rate to target
